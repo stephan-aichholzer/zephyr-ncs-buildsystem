@@ -1,0 +1,10 @@
+../artifacts
+../build
+../.ccache
+../.cache
+**/*.elf
+**/*.hex
+**/*.bin
+**/.git
+**/.venv
+**/__pycache__

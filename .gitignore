@@ -1,0 +1,29 @@
+# Build outputs
+artifacts/
+build/
+*.elf
+*.hex
+*.bin
+
+# Corporate / per-environment TLS-inspection CA bundle.
+# Drop your own *.crt files into docker/certs/ locally; do not commit them.
+# An empty docker/certs/ (just .gitkeep) is fine — the Dockerfile handles it.
+docker/certs/*
+!docker/certs/.gitkeep
+
+# Local Claude Code settings
+.claude/settings.local.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
