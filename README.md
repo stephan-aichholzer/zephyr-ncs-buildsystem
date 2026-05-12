@@ -10,7 +10,9 @@ host toolchain or SDK install needed beyond Docker.
 
 ```
 .
-├── app/        Example application (this README's quick start).
+├── app/        Example application — uses the greet module from src/common.
+├── src/        Reusable common modules. Today: src/common/greet/.
+├── tests/      Host-compiled unit tests, one CMake project per module.
 ├── docker/     Build container: Dockerfile, entrypoint, Makefile, CA certs.
 │               See docker/README.md for container details.
 └── artifacts/  Build outputs (generated; gitignored).
@@ -50,18 +52,33 @@ container is build-only).
 
 ## The example app
 
-`app/` is a minimal Zephyr application that prints the board name and a tick
-counter once per second.
+`app/` is a minimal Zephyr application that prints `greet(CONFIG_BOARD)` and a
+tick counter once per second. The greet implementation lives in
+`src/common/greet/` so the same code path is exercised by both the firmware
+and the unit tests.
+
+Footprint on nrf5340dk/nrf5340/cpuapp: **~34 KB flash, ~8 KB RAM**.
+
+## Run unit tests
+
+Tests under `tests/` are host-compiled (Zephyr `COMPONENTS unittest` mode) —
+pure x86 Linux executables, no kernel, no board. They run inside the build
+container.
+
+```bash
+make -C docker test           # discovers all tests/**/CMakeLists.txt
+```
+
+Per-test outputs land at `artifacts/tests/<test_name>/`:
 
 ```
-app/
-├── CMakeLists.txt    find_package(Zephyr) + project + target_sources.
-├── prj.conf          CONFIG_PRINTK=y, CONFIG_LOG=y.
-└── src/main.c        main() with printk("tick %u") in a k_msleep loop.
+artifacts/tests/common_greet/
+├── testbinary         The compiled x86 test executable (gdb / valgrind friendly).
+└── output.txt         Captured ztest stdout (PASS/FAIL summary, durations).
 ```
 
-Footprint on nrf5340dk/nrf5340/cpuapp: **~34 KB flash, ~8 KB RAM**. Plenty of
-headroom on any of the target SoCs.
+To add a new test: create `tests/<area>/<module>/{CMakeLists.txt, prj.conf, src/test_*.c}`
+mirroring `tests/common/greet/`.
 
 ## Inspecting / debugging inside the container
 

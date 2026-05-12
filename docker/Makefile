@@ -22,7 +22,7 @@ DOCKER_BUILD ?= DOCKER_BUILDKIT=1 $(DOCKER) build
 TTY          := $(shell test -t 0 && echo "-it")
 DOCKER_RUN   ?= $(DOCKER) run --rm $(TTY)
 
-.PHONY: image build shell clean print-tag
+.PHONY: image build test shell clean print-tag
 
 image:
 	$(DOCKER_BUILD) \
@@ -42,6 +42,13 @@ build:
 	    -e BOARD="$(BOARD)" \
 	    -e APP="$(APP)" \
 	    $(TAG) build
+
+test:
+	@mkdir -p "$(ARTIFACTS)"
+	$(DOCKER_RUN) \
+	    -v "$(WORKDIR_HOST)":/workdir \
+	    -v "$(ARTIFACTS)":/artifacts \
+	    $(TAG) test
 
 shell:
 	$(DOCKER_RUN) \

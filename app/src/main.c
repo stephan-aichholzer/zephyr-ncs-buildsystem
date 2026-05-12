@@ -1,9 +1,15 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 
+#include "greet.h"
+
 int main(void)
 {
-	printk("Hello from %s\n", CONFIG_BOARD);
+	char buf[64];
+
+	if (greet(CONFIG_BOARD, buf, sizeof(buf)) > 0) {
+		printk("%s\n", buf);
+	}
 
 	uint32_t tick = 0;
 	while (1) {

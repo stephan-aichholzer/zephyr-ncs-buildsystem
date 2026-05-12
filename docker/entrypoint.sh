@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # zephyr_ncs_bundle entrypoint.
-# Dispatches one of: build (default) | shell | west.
+# Dispatches one of: build (default) | test | shell | west.
 # Build mode is one of:
 #   - mount mode (default): source is bind-mounted at /workdir
 #   - clone mode:           triggered by env GIT_URL; clones into /tmp/src
@@ -111,8 +111,56 @@ cmd_build() {
     fi
 }
 
+cmd_test() {
+    local tests_root="/workdir/${TESTS:-tests}"
+    [[ -d "$tests_root" ]] || { err "tests dir not found: $tests_root"; exit 2; }
+
+    info "discovering tests under $tests_root"
+    cd /opt/ncs
+
+    local pass=0 fail=0 total=0
+    [[ -d /artifacts ]] && mkdir -p /artifacts/tests
+
+    while IFS= read -r cmake; do
+        local test_src test_name build_dir log_file dest
+        test_src="$(dirname "$cmake")"
+        test_name="${test_src#$tests_root/}"
+        test_name="${test_name//\//_}"
+        build_dir="/tmp/test-build/$test_name"
+        dest="/artifacts/tests/$test_name"
+        log_file="$dest/output.txt"
+
+        total=$((total + 1))
+        info "--- test: $test_name ---"
+        [[ -d /artifacts ]] && mkdir -p "$dest"
+
+        # Host-compiled unit test via `find_package(Zephyr COMPONENTS unittest)`.
+        # Pure CMake — no west, no sysbuild, no board. Output: ./testbinary.
+        # Bypass west entirely so the unit-test path stays simple and the test
+        # binary is a plain x86 Linux executable (gdb / valgrind / asan friendly).
+        if mkdir -p "$build_dir" && \
+           cmake -GNinja -B "$build_dir" -S "$test_src" \
+               -DBOARD=unit_testing \
+               -DZEPHYR_BASE=/opt/ncs/zephyr 2>&1 | { [[ -d /artifacts ]] && tee "$log_file" || cat; } && \
+           cmake --build "$build_dir" 2>&1 | { [[ -d /artifacts ]] && tee -a "$log_file" || cat; } && \
+           "$build_dir/testbinary" 2>&1 | { [[ -d /artifacts ]] && tee -a "$log_file" || cat; }; then
+            [[ -d /artifacts && -f "$build_dir/testbinary" ]] && cp "$build_dir/testbinary" "$dest/"
+            pass=$((pass + 1))
+            info "  PASS: $test_name"
+        else
+            fail=$((fail + 1))
+            info "  FAIL: $test_name"
+        fi
+    done < <(find "$tests_root" -name CMakeLists.txt | sort)
+
+    info "============================================"
+    info "tests: $total total, $pass passed, $fail failed"
+    [[ $fail -eq 0 ]]
+}
+
 case "$SUBCOMMAND" in
     build) cmd_build "$@" ;;
+    test)  cmd_test ;;
     shell) cmd_shell ;;
     west)  cmd_west "$@" ;;
     *)     # Anything else: exec verbatim so the image is also usable as a
