@@ -57,8 +57,9 @@ cmd_build() {
         mkdir -p "$board_dir"
         info "copying artifacts to $board_dir"
 
-        # Top-level sysbuild outputs (merged image[s]).
-        for f in merged.hex merged_domains.hex tfm_merged.hex; do
+        # Top-level sysbuild outputs: merged image(s) + partition/domain layout.
+        for f in merged.hex merged_domains.hex tfm_merged.hex \
+                 partitions.yml domains.yaml; do
             [[ -f "$build_dir/$f" ]] && cp "$build_dir/$f" "$board_dir/"
         done
 
@@ -75,9 +76,33 @@ cmd_build() {
             local dest="$board_dir"
             [[ "$image" != "$(basename "$build_dir")" ]] && dest="$board_dir/$image"
             mkdir -p "$dest"
-            for f in zephyr.hex zephyr.bin zephyr.elf zephyr.dts; do
+            # Flashable artifacts + memory-analysis inputs:
+            #   zephyr.map   linker map (full symbol layout, addresses, sizes)
+            #   .config      final Kconfig (which features are compiled in)
+            #   zephyr.lst   disassembly listing (only if generated)
+            # MCUboot-signed variants (zephyr.signed.*) are copied when MCUboot
+            # is enabled in the build — these are the OTA payload format.
+            for f in zephyr.hex zephyr.bin zephyr.elf zephyr.dts \
+                     zephyr.map zephyr.lst .config \
+                     zephyr.signed.hex zephyr.signed.bin \
+                     zephyr.signed.encrypted.hex zephyr.signed.encrypted.bin; do
                 [[ -f "$zdir/$f" ]] && cp "$zdir/$f" "$dest/"
             done
+            # Human-readable ROM/RAM breakdowns from Zephyr's built-in
+            # reports. Re-runs cmake/ninja against the build tree, prints
+            # hierarchical text. Cheap (seconds) since everything is cached.
+            local img_build_dir
+            img_build_dir="$(dirname "$zdir")"
+            if ninja -C "$img_build_dir" rom_report >"$dest/rom_report.txt" 2>/dev/null; then
+                info "  rom_report → ${dest#$board_dir/}/rom_report.txt"
+            else
+                rm -f "$dest/rom_report.txt"
+            fi
+            if ninja -C "$img_build_dir" ram_report >"$dest/ram_report.txt" 2>/dev/null; then
+                info "  ram_report → ${dest#$board_dir/}/ram_report.txt"
+            else
+                rm -f "$dest/ram_report.txt"
+            fi
             found=1
         done
         shopt -u nullglob
