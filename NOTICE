@@ -1,0 +1,66 @@
+zephyr-ncs-buildsystem
+======================
+
+This repository is build-system orchestration only. No third-party source is
+redistributed by this repository itself; the container image built from this
+repository downloads and integrates the projects listed below at build time,
+each under its own license. Built images and resulting firmware inherit a
+mix of licenses and must be redistributed accordingly.
+
+
+Third-party projects
+--------------------
+
+  Zephyr Project (RTOS)
+    https://github.com/zephyrproject-rtos/zephyr
+    License: Apache-2.0
+
+  Zephyr SDK (toolchain bundle)
+    https://github.com/zephyrproject-rtos/sdk-ng
+    Includes GCC (GPL-3.0 with GCC Runtime Library Exception), binutils
+    (GPL-3.0), newlib (various BSD-style), picolibc (BSD-3-Clause), and
+    other components under their respective licenses.
+
+  west (Zephyr meta-tool)
+    https://github.com/zephyrproject-rtos/west
+    License: Apache-2.0
+
+  nRF Connect SDK (sdk-nrf)
+    https://github.com/nrfconnect/sdk-nrf
+    License: LicenseRef-Nordic-5-Clause, BSD-3-Clause
+
+  sdk-zephyr (Nordic fork of Zephyr)
+    https://github.com/nrfconnect/sdk-zephyr
+    License: Apache-2.0
+
+  MCUboot
+    https://github.com/mcu-tools/mcuboot
+    License: Apache-2.0
+
+  nrfxlib (Nordic binary libraries)
+    https://github.com/nrfconnect/sdk-nrfxlib
+    License: LicenseRef-Nordic-5-Clause
+    Use of the libraries is restricted to Nordic Semiconductor integrated
+    circuits.
+
+  Trusted Firmware-M (TF-M)
+    https://www.trustedfirmware.org/projects/tf-m/
+    License: BSD-3-Clause
+
+  JFrog CLI
+    https://github.com/jfrog/jfrog-cli
+    License: Apache-2.0
+
+  Ubuntu (base image)
+    https://ubuntu.com/legal/intellectual-property-policy
+    License: Various per package (GPL-2.0, LGPL, BSD, MIT, Apache-2.0, ...).
+
+
+Trademarks
+----------
+
+Nordic, nRF, and nRF Connect are trademarks of Nordic Semiconductor ASA.
+Zephyr is a trademark of the Linux Foundation. Docker is a trademark of
+Docker, Inc. Ubuntu is a trademark of Canonical Ltd. Other names may be
+trademarks of their respective owners. Use of these names in this project
+is nominative and does not imply endorsement.
