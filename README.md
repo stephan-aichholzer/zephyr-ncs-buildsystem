@@ -61,24 +61,30 @@ Footprint on nrf5340dk/nrf5340/cpuapp: **~34 KB flash, ~8 KB RAM**.
 
 ## Run unit tests
 
-Tests under `tests/` are host-compiled (Zephyr `COMPONENTS unittest` mode) —
-pure x86 Linux executables, no kernel, no board. They run inside the build
-container.
+`tests/` mirrors `src/`. A top-level `tests/CMakeLists.txt` uses
+`ExternalProject_Add` to wrap each leaf test as its own isolated Zephyr
+unittest build. Result: one executable per module, named `ztest_<area>_<module>`.
 
 ```bash
-make -C docker test           # discovers all tests/**/CMakeLists.txt
+make -C docker test                              # configure + build + run all
 ```
 
-Per-test outputs land at `artifacts/tests/<test_name>/`:
+Each test produces a stand-alone x86 Linux ELF (no kernel, no board — gdb /
+valgrind / asan friendly). Per-test outputs land at `artifacts/tests/<name>/`:
 
 ```
-artifacts/tests/common_greet/
-├── testbinary         The compiled x86 test executable (gdb / valgrind friendly).
-└── output.txt         Captured ztest stdout (PASS/FAIL summary, durations).
+artifacts/tests/ztest_common_greet/
+├── ztest_common_greet    The compiled x86 test executable.
+└── output.txt            Captured ztest stdout (PASS/FAIL summary, durations).
 ```
 
-To add a new test: create `tests/<area>/<module>/{CMakeLists.txt, prj.conf, src/test_*.c}`
-mirroring `tests/common/greet/`.
+Adding a new test:
+
+1. Create the module under `src/<area>/<module>/`.
+2. Create `tests/<area>/<module>/{CMakeLists.txt, prj.conf, src/test_*.c}`
+   mirroring `tests/common/greet/`.
+3. `make -C docker test` — the aggregator discovers it automatically via
+   `file(GLOB_RECURSE CONFIGURE_DEPENDS)`.
 
 ## Inspecting / debugging inside the container
 
